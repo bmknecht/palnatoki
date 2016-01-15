@@ -1,5 +1,9 @@
 # Python
 *.pyc
+*.py
+
+# TODO file
+*.todo
 
 # Object files
 *.o
