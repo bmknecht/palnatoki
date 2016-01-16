@@ -3,11 +3,15 @@
 
 #include "../common/common.h"
 
+
 typedef int (*pntSsSATemp)(int i, int nmax, float *t);
 typedef int (*pntDsSATemp)(int i, int nmax, double *t);
 typedef int (*pntLDsSATemp)(int i, int nmax, long double *t);
 
 typedef int (*pntSsSANeighbour)(float x, float t, float *x1);
+typedef int (*pntDsSANeighbour)(double x, double t, double *x1);
+typedef int (*pntLDsSANeighbour)(long double x, long double t,
+                                 long double *x1);
 
 typedef int (*pntSsSADowngrade)(float fx, float fxn, float temp, int *result);
 typedef int (*pntDsSADowngrade)(double fx, double fxn, double temp,
@@ -15,7 +19,6 @@ typedef int (*pntDsSADowngrade)(double fx, double fxn, double temp,
 typedef int (*pntLDsSADowngrade)(long double fx, long double fxn,
                                  long double temp, int *result);
 
-typedef int (*pntSsSAObjective)(float x, float *fx);
 
 typedef struct _pntSsSAOptional
 {
@@ -25,6 +28,7 @@ typedef struct _pntSsSAOptional
 	pntSsSANeighbour neighbour;
 	pntSsSADowngrade downgrade;
 } pntSsSAOptional;
+void pntSsSAOptionalReset(pntSsSAOptional*);
 
 
 typedef struct _pntSsSAResult
@@ -33,6 +37,44 @@ typedef struct _pntSsSAResult
 	float x;
 	float fx;
 } pntSsSAResult;
+
+
+typedef struct _pntDsSAOptional
+{
+	pntDsBoundary xmin;
+	pntDsBoundary xmax;
+	pntDsSATemp temp;
+	pntDsSANeighbour neighbour;
+	pntDsSADowngrade downgrade;
+} pntDsSAOptional;
+const pntDsSAOptional pntDsSAOptionalStd;
+
+
+typedef struct _pntDsSAResult
+{
+	int iterations;
+	double x;
+	double fx;
+} pntDsSAResult;
+
+
+typedef struct _pntLDsSAOptional
+{
+	pntLDsBoundary xmin;
+	pntLDsBoundary xmax;
+	pntLDsSATemp temp;
+	pntLDsSANeighbour neighbour;
+	pntLDsSADowngrade downgrade;
+} pntLDsSAOptional;
+const pntLDsSAOptional pntLDsSAOptionalStd;
+
+
+typedef struct _pntLDsSAResult
+{
+	int iterations;
+	long double x;
+	long double fx;
+} pntLDsSAResult;
 
 
 /** Computes the minimum of an objective function via the simulated
@@ -56,6 +98,15 @@ typedef struct _pntSsSAResult
  *  Returns:
  *  	tuple consisting of 3 values: 
  */
+int pntSsSimAnn(float x, float fx, pntSsSAObjective f, const int nmax,
+                float fmin, pntSsSANeighbour neighbour,
+                pntSsSAOptional *optional, pntSsSAResult *result);
+int pntDsSimAnn(double x, double fx, pntDsSAObjective f, const int nmax,
+                double fmin, pntDsSANeighbour neighbour,
+                pntDsSAOptional *optional, pntDsSAResult *result);
+int pntLDsSimAnn(long double x, long double fx, pntLDsSAObjective f,
+                 const int nmax, long double fmin, pntLDsSANeighbour neighbour,
+                 pntLDsSAOptional *optional, pntLDsSAResult *result);
 
 
 #endif // PALNATOKI_SIMULATED_ANNEALING_H
