@@ -2,6 +2,9 @@
 *.pyc
 *.py
 
+# Test compilation files
+compile_*.sh
+
 # TODO file
 *.todo
 
