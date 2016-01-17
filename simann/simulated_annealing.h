@@ -1,12 +1,17 @@
 #ifndef PALNATOKI_SIMULATED_ANNEALING_H
 #define PALNATOKI_SIMULATED_ANNEALING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #include "../common/common.h"
 
 
-typedef int (*pntSsSATemp)(int i, int nmax, float *t);
-typedef int (*pntDsSATemp)(int i, int nmax, double *t);
-typedef int (*pntLDsSATemp)(int i, int nmax, long double *t);
+typedef int (*pntSsSATemperature)(int i, int nmax, float *t);
+typedef int (*pntDsSATemperature)(int i, int nmax, double *t);
+typedef int (*pntLDsSATemperature)(int i, int nmax, long double *t);
 
 typedef int (*pntSsSANeighbour)(float x, float t, float *x1);
 typedef int (*pntDsSANeighbour)(double x, double t, double *x1);
@@ -22,13 +27,9 @@ typedef int (*pntLDsSADowngrade)(long double fx, long double fxn,
 
 typedef struct _pntSsSAOptional
 {
-	pntSsBoundary xmin;
-	pntSsBoundary xmax;
-	pntSsSATemp temp;
-	pntSsSANeighbour neighbour;
+	pntSsSATemperature temperature;
 	pntSsSADowngrade downgrade;
 } pntSsSAOptional;
-void pntSsSAOptionalReset(pntSsSAOptional*);
 
 
 typedef struct _pntSsSAResult
@@ -41,13 +42,9 @@ typedef struct _pntSsSAResult
 
 typedef struct _pntDsSAOptional
 {
-	pntDsBoundary xmin;
-	pntDsBoundary xmax;
-	pntDsSATemp temp;
-	pntDsSANeighbour neighbour;
+	pntDsSATemperature temperature;
 	pntDsSADowngrade downgrade;
 } pntDsSAOptional;
-const pntDsSAOptional pntDsSAOptionalStd;
 
 
 typedef struct _pntDsSAResult
@@ -60,13 +57,9 @@ typedef struct _pntDsSAResult
 
 typedef struct _pntLDsSAOptional
 {
-	pntLDsBoundary xmin;
-	pntLDsBoundary xmax;
-	pntLDsSATemp temp;
-	pntLDsSANeighbour neighbour;
+	pntLDsSATemperature temperature;
 	pntLDsSADowngrade downgrade;
 } pntLDsSAOptional;
-const pntLDsSAOptional pntLDsSAOptionalStd;
 
 
 typedef struct _pntLDsSAResult
@@ -98,15 +91,20 @@ typedef struct _pntLDsSAResult
  *  Returns:
  *  	tuple consisting of 3 values: 
  */
-int pntSsSimAnn(float x, float fx, pntSsSAObjective f, const int nmax,
+int pntSsSimAnn(float x, float fx, pntSsObjective f, const int nmax,
                 float fmin, pntSsSANeighbour neighbour,
                 pntSsSAOptional *optional, pntSsSAResult *result);
-int pntDsSimAnn(double x, double fx, pntDsSAObjective f, const int nmax,
+int pntDsSimAnn(double x, double fx, pntDsObjective f, const int nmax,
                 double fmin, pntDsSANeighbour neighbour,
                 pntDsSAOptional *optional, pntDsSAResult *result);
-int pntLDsSimAnn(long double x, long double fx, pntLDsSAObjective f,
-                 const int nmax, long double fmin, pntLDsSANeighbour neighbour,
+int pntLDsSimAnn(long double x, long double fx, pntLDsObjective f,
+                 const int nmax, long double fmin,
+                 pntLDsSANeighbour neighbour,
                  pntLDsSAOptional *optional, pntLDsSAResult *result);
 
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // PALNATOKI_SIMULATED_ANNEALING_H

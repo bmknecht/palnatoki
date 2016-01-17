@@ -1,4 +1,8 @@
+
+extern "C"
+{
 #include "../common/common.h"
+}
 
 
 #define RETHROW(expr)       \
@@ -8,3 +12,5 @@
         return res;         \
 }
 
+template<typename F>
+using sObjective = int (*)(F, F*);
