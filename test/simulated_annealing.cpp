@@ -63,7 +63,7 @@ void testFunctionalityS()
     TEST(pntSsSimAnn(5.f, fx, ssAuckley, 100000, 0.f, auckleyNeighbour,
                      &optional, &result) == PNT_SUCCESS);
     TEST(result.fx < fx);
-    TEST(fabsf(result.x) <= 5.f);
+    TEST(fabsf(result.x) <= 1e-3f);
 
     TEST(pntSsSimAnn(5.f, fx, ssAuckley, 100000, 0.f, failingNeighbour,
                       &optional, &result) == 101);
