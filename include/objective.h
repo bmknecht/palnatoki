@@ -6,10 +6,9 @@ extern "C" {
 #endif
 
 
-int ssAuckley(float x, float *fx);
-int dsAuckley(double x, double *fx);
-int ldsAuckley(long double x, long double *fx);
-
+int fAckley(float *x, int n, float *fx);
+int dAckley(double *x, int n, double *fx);
+int ldAckley(long double *x, int n, long double *fx);
 
 #ifdef __cplusplus
 }

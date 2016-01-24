@@ -1,9 +1,7 @@
 
-extern "C"
-{
-#include "../common/common.h"
-}
-
+#include <palnatoki/include/common.h>
+#include "compiler_specifics.hpp"
+#include "math.hpp"
 
 #define RETHROW(expr)       \
 {                           \
@@ -12,10 +10,17 @@ extern "C"
         return res;         \
 }
 
-typedef int (*ssObjective)(float, float*);
-typedef int (*ssObjective)(float, float*);
-typedef int (*ssObjective)(float, float*);
+#define BEGIN_GUARD_CPP_CODE try
+#define END_GUARD_CPP_CODE              \
+    catch(std::exception &e) {          \
+        return PNT_STD_EXCEPTION;       \
+    } catch(...) {                      \
+        return PNT_UNKNOWN_ERROR;       \
+    }
 
-typedef int (*ssObjective)(float, float*);
-typedef int (*ssObjective)(float, float*);
-typedef int (*ssObjective)(float, float*);
+template<typename T>
+T* asPointer(T &t) { return &t; }
+
+template<typename T>
+T* asPointer(Vector<T> *t) { return t->asPointer(); }
+

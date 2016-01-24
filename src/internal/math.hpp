@@ -1,0 +1,6 @@
+#ifndef PALNATOKI_INTERNAL_MATH_HPP
+#define PALNATOKI_INTERNAL_MATH_HPP
+
+#include "vector.hpp"
+
+#endif // PALNATOKI_INTERNAL_MATH_HPP
