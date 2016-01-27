@@ -8,7 +8,7 @@ static const float pif = 3.1415926535898f;
 
 
 template<class T>
-int sAckley(Vector<T> &x, T *fx)
+int Ackley(Vector<T> &x, T *fx)
 {
     assert(fx);
     const T a = 20.;
@@ -29,19 +29,19 @@ extern "C" {
     int fAckley(float *x, int n, float *fx) {
         Vector<float> xv;
         xv.borrowFrom(x, n);
-        return sAckley(xv, fx);
+        return Ackley(xv, fx);
     }
 
     int dAckley(double *x, int n, double *fx) {
         Vector<double> xv;
         xv.borrowFrom(x, n);
-        return sAckley(xv, fx);
+        return Ackley(xv, fx);
     }
 
     int ldAckley(long double *x, int n, long double *fx) {
         Vector<long double> xv;
         xv.borrowFrom(x, n);
-        return sAckley(xv, fx);
+        return Ackley(xv, fx);
     }
 }
 

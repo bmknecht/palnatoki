@@ -2,6 +2,9 @@
 *.pyc
 *.py
 
+# dependency files
+*.d
+
 # Test compilation files
 compile_*.sh
 

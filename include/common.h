@@ -3,6 +3,11 @@
 
 #ifdef __cplusplus
 extern "C" {
+
+#ifndef restrict
+#define restrict __restrict
+#endif
+
 #endif
 
 
@@ -11,8 +16,13 @@ extern "C" {
         #define PNT_LIB __declspec(dllexport)
     #elif defined PNT_IMPORT_LIBRARY
         #define PNT_LIB __declspec(dllimport)
+    #else
+        #define PNT_LIB
     #endif
+#else
+#define PNT_LIB
 #endif
+
 
 #ifndef PNT_LIB
     #define PNT_LIB
