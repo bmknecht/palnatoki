@@ -13,86 +13,91 @@
 
 
 //
-//  typedefs
+// standard functions
 //
 template<typename T>
-using Neighbour = void (*)(const T*restrict, unsigned int, T, T*restrict);
-template<typename T>
-using Objective = T (*)(const T*restrict, unsigned int);
-
-
-template<typename T>
-static inline T pntSALinearTemperature(unsigned int i, unsigned int nmax,
-                                       T oldTemperature) {
-    return oldTemperature - T(1) / T(nmax);
+static inline T linearTemperature(unsigned int i, unsigned int itermax,
+                                  T oldTemperature) {
+    return std::max(oldTemperature - T(1) / T(itermax), T(0));
 }
 
 
 template<typename T>
-static inline T pntSAExponentialTemperature(unsigned int i, unsigned int nmax,
-                                            T oldTemperature) {
-    return 0.95 * oldTemperature;
-}
-
-
-template<typename T>
-static inline bool downgrade(T fx, T fx1, T t) {
+static inline int downgrade(T fx, T fxnew, T t) {
     T randomValue = T(rand()) / T(RAND_MAX);
-    return (std::exp(fx/t) / std::exp(fx1/t)) > randomValue;
+    return std::exp((fx - fxnew)/t) > randomValue;
 }
 
 
+//
+//  local functions
+//
 template<typename T>
-static inline void chooseNextX(T *restrict *restrict x, T &fx,
-                               T *restrict *restrict x1, T fx1, T *t) {
-    assert(x && *x && x1 && *x1 && t);
-    if(fx1 < fx) {
-        std::swap(*x, *x1);
-        fx = fx1;
+static inline T chooseNextX(T *restrict *restrict x, T fx,
+                            T *restrict *restrict xnew, T fxnew, T t,
+                            int (*downgrade)(T, T, T)) {
+    assert(x && *x && xnew && *xnew);
+    if(fxnew < fx) {
+        std::swap(*x, *xnew);
+        return fxnew;
     }
-    else if(downgrade(fx, fx1, *t)) {
-        std::swap(*x, *x1);
-        fx = fx1;
+    else if(downgrade(fx, fxnew, t)) {
+        std::swap(*x, *xnew);
+        return fxnew;
     }
+    return fx;
 }
 
 
-template<typename T>
-static void iteration(Objective<T> f, unsigned int i,
-                      unsigned int nmax,
-                      Neighbour<T> neighbour,
-                      T *restrict *restrict x, T *restrict *restrict x1,
-                      unsigned int n, T &fx, unsigned int *stuckIterations,
-                      float *t) {
-    assert(f && neighbour && i < nmax && stuckIterations && t);
+template<typename TParameters, typename TResult>
+static bool verifyParameters(TParameters *parameters, TResult *result) {
+    if(!parameters || !result) {
+        return false;
+    }
 
+    if(!parameters->x || parameters->n <= 0 || !parameters->neighbour ||
+       !parameters->f || !parameters->work) {
+        return false;
+    }
+
+    if(!result->x) {
+        return false;
+    }
+    return true;
 }
+
+
 
 
 //
 //  main function
 //
-template<typename TFloat, typename TResult>
-void cppSimAnn(TFloat *restrict x, TFloat *restrict x1, unsigned int n,
-               TFloat fx, Objective<TFloat> f, unsigned int nmax,
-               TFloat fmin, Neighbour<TFloat> neighbour, TResult &result) {
-    // parameter check
-    assert(x && x1 && f && neighbour);
+template<typename TFloat, typename TParameters, typename TResult>
+void cppSimAnn(TParameters &parameters, TResult &result) {
+    assert(verifyParameters(&parameters, &result));
+    const unsigned int n = parameters.n;
+    const unsigned int itermax = parameters.itermax;
+    TFloat *restrict &x = parameters.x;
+    TFloat *restrict &xnew = reinterpret_cast<TFloat*restrict&>(parameters.work);
+    TFloat &fx = parameters.fx;
 
     // setup
     vec::copy(result.x, x, n);
     result.fx = fx;
-    result.iterations = nmax;
+    result.iterations = itermax;
 
     // iteration
-    unsigned int stuckIterations = 0;
-    float temperature = 1.f;
-    for(unsigned int i = 0; i < nmax; i++) {
-        *t = temperature<T>(i, nmax, *t);
-        neighbour(*x, n, *t, *x1);
-
-        T fx1 = f(*x1, n);
-        chooseNextX(x, fx, x1, fx1, t, stuckIterations);
+    float t = 1.f;
+    auto temperature = (parameters.temperature ? parameters.temperature :
+                        ::linearTemperature<TFloat>);
+    auto downgrade = (parameters.downgrade ? parameters.downgrade : 
+                      ::downgrade<TFloat>);
+    for(unsigned int i = 0; i < itermax; i++) {
+        // compute and evaluate new parameters
+        t = temperature(i, itermax, t);
+        parameters.neighbour(x, n, t, xnew);
+        TFloat fxnew = parameters.f(xnew, n);
+        fx = chooseNextX(&x, fx, &xnew, fxnew, t, downgrade);
 
         // new best parameter ?
         if(result.fx > fx) {
@@ -101,7 +106,7 @@ void cppSimAnn(TFloat *restrict x, TFloat *restrict x1, unsigned int n,
         }
 
         // reached goal ?
-        if(fx <= fmin) {
+        if(fx <= parameters.fmin) {
             result.iterations = i;
             break;
         }
@@ -110,18 +115,14 @@ void cppSimAnn(TFloat *restrict x, TFloat *restrict x1, unsigned int n,
 
 
 extern "C" {
-    int pntfSimAnn(float *restrict x, unsigned int n, float fx,
-                   pntfSAObjective f, unsigned int itermax, float fmin,
-                   pntfSANeighbour neighbour,
-                   void *restrict data, pntfSAResult *result) {
+    int pntfSimAnn(pntfSAParameters *parameters,
+                   pntfSAResult *result) {
         BEGIN_GUARD_CPP_CODE {
-            if(!x || !f || !neighbour || !data || !result) {
+            if(!verifyParameters(parameters, result)) {
                 return PNT_INVALID_PARAMETER;
             }
 
-            float *restrict x1 = reinterpret_cast<float *restrict>(data);
-            cppSimAnn<float>(x, x1, n, fx, f, itermax, fmin, neighbour,
-                             *result);
+            cppSimAnn<float>(*parameters, *result);
         } END_GUARD_CPP_CODE;
         return PNT_SUCCESS;
     }

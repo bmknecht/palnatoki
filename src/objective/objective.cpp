@@ -8,7 +8,7 @@ static const float pif = 3.1415926535898f;
 
 
 template<class T>
-T Ackley(const T *restrict x, unsigned int n) {
+static T Ackley(const T *restrict x, unsigned int n) {
     const T a = 20.;
     const T b = 0.2;
     const T c = 2*pif;
