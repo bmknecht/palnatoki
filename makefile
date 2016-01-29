@@ -24,26 +24,26 @@ SOURCEPATH=src/
 
 # static test executable
 else ifeq ($(MAKECMDGOALS), test-static)
-CC=gcc
-CFLAGS=-Wextra -Og -g3 -ggdb -c -std=c11 -I../ -static
+CC=g++
+CFLAGS=-Wextra -Og -g3 -ggdb -c -std=c++11 -I../ -static
 LNK=g++
 LNKFLAGS=-Lbuild/static/ -lpalnatoki -static
 OUTPREFIX=-o
 BUILDPATH=test/build/
 BUILDNAME=test.exe
-SOURCEEXT=c
+SOURCEEXT=cpp
 SOURCEPATH=test/
 
 # shared test executable
 else ifeq ($(MAKECMDGOALS), test-shared)
-CC=gcc
-CFLAGS=-Wextra -Og -g3 -ggdb -c -std=c11 -I../
+CC=g++
+CFLAGS=-Wextra -Og -g3 -ggdb -c -std=c++11 -I../
 LNK=g++
 LNKFLAGS=-Lbuild/shared/ -lpalnatoki
 OUTPREFIX=-o
 BUILDPATH=test/build/
 BUILDNAME=test.exe
-SOURCEEXT=c
+SOURCEEXT=cpp
 SOURCEPATH=test/
 
 # cleaning

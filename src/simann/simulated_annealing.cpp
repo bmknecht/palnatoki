@@ -4,207 +4,126 @@
 #include "../internal/compiler_specifics.hpp"
 
 #include <cassert>
+#include <fstream>
+#include <iostream>
 #include <random>
 
 #include "../internal/utility.hpp"
 #include <palnatoki/include/simulated_annealing.h>
 
 
-const pntfSAOptional pntfSAOptionalDefault = { nullptr, nullptr };
-const pntdSAOptional pntdSAOptionalDefault = { nullptr, nullptr };
-const pntldSAOptional pntldSAOptionalDefault = { nullptr, nullptr };
-
 //
 //  typedefs
 //
-template<typename F>
-using Neighbour = int (*)(F*, int, F, F*);
-template<typename F>
-using Downgrade = int (*)(F, F, F, int*);
-template<typename F>
-using Objective = int (*)(F*, int, F*);
-
-//
-//  local functions
-//
-template<typename F>
-static int temperature(int i, int nmax, F *t) {
-    if(!t || nmax == i) {
-        return PNT_LOGIC_ERROR;
-    }
-    *t = 1.f - (F)i / (F)nmax;
-    return PNT_SUCCESS;
-}
+template<typename T>
+using Neighbour = void (*)(const T*restrict, unsigned int, T, T*restrict);
+template<typename T>
+using Objective = T (*)(const T*restrict, unsigned int);
 
 
-template<typename F>
-static int downgrade(F fx, F fx1, F t, int *result) {
-    if(!result) {
-        return PNT_LOGIC_ERROR;
-    }
-    F randomValue = (F)rand() / (F)RAND_MAX;
-    *result = std::exp(-(fx1 - fx) / t) > randomValue;
-    return PNT_SUCCESS;
-}
-
-
-template<typename F>
-static int chooseNextX(Vector<F> &x, F &fx, Vector<F> &&x1, F fx1, F t,
-                       Downgrade<F> downgrade) {
-    if(!downgrade) {
-        return PNT_LOGIC_ERROR;
-    }
-
-    if(fx1 < fx) {
-        x = std::move(x1);
-        fx = fx1;
-    }
-    else {
-        int result;
-        RETHROW(downgrade(fx, fx1, t, &result));
-        if(result) {
-            x = std::move(x1);
-            fx = fx1;
-        }
-    }
-    return PNT_SUCCESS;
-}
-
-
-template<typename TFloat, typename TOptional>
-static int iteration(Objective<TFloat> f, int i, const int nmax,
-                     const TOptional &optional,
-                     Neighbour<TFloat> neighbour,
-                     Vector<TFloat> &x, TFloat &fx) {
-    if(!neighbour || i >= nmax) {
-        return PNT_LOGIC_ERROR;
-    }
-
-    TFloat t;
-    Vector<TFloat> x1;
-    x1.resize(size(x));
-    RETHROW(optional.temperature(i, nmax, &t));
-    RETHROW(neighbour(x.pointer(), size(x), t, x1.pointer()));
-
-    TFloat fx1;
-    RETHROW(f(x1.pointer(), size(x1), &fx1));
-    RETHROW(chooseNextX(x, fx, std::move(x1), fx1, t, optional.downgrade));
-    return PNT_SUCCESS;
+template<typename T>
+static inline T pntSALinearTemperature(unsigned int i, unsigned int nmax,
+                                       T oldTemperature) {
+    return oldTemperature - T(1) / T(nmax);
 }
 
 
 template<typename T>
-void verifyParameters(T &optional) {
-    if(!optional.temperature)
-        optional.temperature = temperature;
-    if(!optional.downgrade)
-        optional.downgrade = downgrade;
+static inline T pntSAExponentialTemperature(unsigned int i, unsigned int nmax,
+                                            T oldTemperature) {
+    return 0.95 * oldTemperature;
+}
+
+
+template<typename T>
+static inline bool downgrade(T fx, T fx1, T t) {
+    T randomValue = T(rand()) / T(RAND_MAX);
+    return (std::exp(fx/t) / std::exp(fx1/t)) > randomValue;
+}
+
+
+template<typename T>
+static inline void chooseNextX(T *restrict *restrict x, T &fx,
+                               T *restrict *restrict x1, T fx1, T *t) {
+    assert(x && *x && x1 && *x1 && t);
+    if(fx1 < fx) {
+        std::swap(*x, *x1);
+        fx = fx1;
+    }
+    else if(downgrade(fx, fx1, *t)) {
+        std::swap(*x, *x1);
+        fx = fx1;
+    }
+}
+
+
+template<typename T>
+static void iteration(Objective<T> f, unsigned int i,
+                      unsigned int nmax,
+                      Neighbour<T> neighbour,
+                      T *restrict *restrict x, T *restrict *restrict x1,
+                      unsigned int n, T &fx, unsigned int *stuckIterations,
+                      float *t) {
+    assert(f && neighbour && i < nmax && stuckIterations && t);
+
 }
 
 
 //
 //  main function
 //
-template<typename TFloat, typename TResult, typename TOptional>
-int cppSimAnn(Vector<TFloat> &x, TFloat fx,
-              Objective<TFloat> f,
-              const int nmax, TFloat fmin,
-              Neighbour<TFloat> neighbour,
-              TOptional &optional, TResult *result) {
+template<typename TFloat, typename TResult>
+void cppSimAnn(TFloat *restrict x, TFloat *restrict x1, unsigned int n,
+               TFloat fx, Objective<TFloat> f, unsigned int nmax,
+               TFloat fmin, Neighbour<TFloat> neighbour, TResult &result) {
     // parameter check
-    if(!result || !f || !neighbour || !result)
-        return PNT_LOGIC_ERROR;
+    assert(x && x1 && f && neighbour);
 
     // setup
-    verifyParameters(optional);
-    Vector<TFloat> resultVector;
-    resultVector.borrowFrom(result->x, size(x));
-    resultVector = x;
-    result->fx = fx;
-    result->iterations = nmax;
+    vec::copy(result.x, x, n);
+    result.fx = fx;
+    result.iterations = nmax;
 
     // iteration
-    for(int i = 0; i < nmax; i++) {
-        RETHROW(iteration(f, i, nmax, optional, neighbour, x, fx));
+    unsigned int stuckIterations = 0;
+    float temperature = 1.f;
+    for(unsigned int i = 0; i < nmax; i++) {
+        *t = temperature<T>(i, nmax, *t);
+        neighbour(*x, n, *t, *x1);
+
+        T fx1 = f(*x1, n);
+        chooseNextX(x, fx, x1, fx1, t, stuckIterations);
 
         // new best parameter ?
-        if(result->fx > fx) {
-            resultVector = x;
-            result->fx = fx;
+        if(result.fx > fx) {
+            vec::copy(result.x, x, n);
+            result.fx = fx;
         }
 
         // reached goal ?
         if(fx <= fmin) {
-            result->iterations = i;
+            result.iterations = i;
             break;
         }
     }
-
-    return PNT_SUCCESS;
 }
 
 
 extern "C" {
-    int pntfSimAnn(float *xr, int n, float fx, pntfSAObjective f,
-                   const int itermax, float fmin, pntfSANeighbour neighbour,
-                   const pntfSAOptional *optional, pntfSAResult *result) {
+    int pntfSimAnn(float *restrict x, unsigned int n, float fx,
+                   pntfSAObjective f, unsigned int itermax, float fmin,
+                   pntfSANeighbour neighbour,
+                   void *restrict data, pntfSAResult *result) {
         BEGIN_GUARD_CPP_CODE {
-            if(!f || !neighbour || !result) {
+            if(!x || !f || !neighbour || !data || !result) {
                 return PNT_INVALID_PARAMETER;
             }
 
-            pntfSAOptional tempOptional(pntfSAOptionalDefault);
-            if(optional) {
-                tempOptional = *optional;
-            }
-
-            Vector<float> x;
-            x.borrowFrom(xr, n);
-            return cppSimAnn(x, fx, f, itermax, fmin, neighbour, tempOptional,
-                             result);
+            float *restrict x1 = reinterpret_cast<float *restrict>(data);
+            cppSimAnn<float>(x, x1, n, fx, f, itermax, fmin, neighbour,
+                             *result);
         } END_GUARD_CPP_CODE;
-    }
-
-
-    int pntdSimAnn(double *xr, int n, double fx, pntdSAObjective f,
-                   const int itermax, double fmin, pntdSANeighbour neighbour,
-                   const pntdSAOptional *optional,
-                   pntdSAResult *result) {
-        BEGIN_GUARD_CPP_CODE {
-            if(!f || !neighbour || !result) {
-                return PNT_INVALID_PARAMETER;
-            }
-
-            pntdSAOptional tempOptional(pntdSAOptionalDefault);
-            if(optional) {
-                tempOptional = *optional;
-            }
-            Vector<double> x;
-            x.borrowFrom(xr, n);
-            return cppSimAnn(x, fx, f, itermax, fmin, neighbour, tempOptional,
-                             result);
-        } END_GUARD_CPP_CODE;
-    }
-
-
-    int pntldSimAnn(long double *xr, int n, long double fx,
-                    pntldSAObjective f, const int itermax, long double fmin,
-                    pntldSANeighbour neighbour,
-                    const pntldSAOptional *optional,
-                    pntldSAResult *result) {
-        BEGIN_GUARD_CPP_CODE {
-            if(!f || !neighbour || !result) {
-                return PNT_INVALID_PARAMETER;
-            }
-
-            pntldSAOptional tempOptional(pntldSAOptionalDefault);
-            if(optional) {
-                tempOptional = *optional;
-            }
-            Vector<long double> x;
-            x.borrowFrom(xr, n);
-            return cppSimAnn(x, fx, f, itermax, fmin, neighbour, tempOptional,
-                             result);
-        } END_GUARD_CPP_CODE;
+        return PNT_SUCCESS;
     }
 }
+

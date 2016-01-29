@@ -8,9 +8,9 @@ extern "C" {
 #endif
 
 
-PNT_LIB int fAckley(float *x, int n, float *fx);
-PNT_LIB int dAckley(double *x, int n, double *fx);
-PNT_LIB int ldAckley(long double *x, int n, long double *fx);
+PNT_LIB float fAckley(const float *restrict x, unsigned int n);
+PNT_LIB double dAckley(const double *restrict x, unsigned int n);
+PNT_LIB long double ldAckley(const long double *restrict x, unsigned int n);
 
 #ifdef __cplusplus
 }

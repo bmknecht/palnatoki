@@ -8,40 +8,31 @@ static const float pif = 3.1415926535898f;
 
 
 template<class T>
-int Ackley(Vector<T> &x, T *fx)
-{
-    assert(fx);
+T Ackley(const T *restrict x, unsigned int n) {
     const T a = 20.;
     const T b = 0.2;
     const T c = 2*pif;
 
     T cosSum = 0.;
-    for(int i=0; i < size(x); i++) {
+    for(size_t i=0; i < n; i++) {
         cosSum += std::cos(c*x[i]);
     }
 
-    *fx = -a*std::exp(-b*std::sqrt(sqrSum(x) / (T)size(x)))
-          - std::exp(cosSum / (T)size(x)) + a + std::exp(1.f);
-    return 0;
+    return -a*std::exp(-b*std::sqrt(vec::sqrSum(x, n) / (T)n))
+           - std::exp(cosSum / (T)n) + a + std::exp(1.f);
 }
 
 extern "C" {
-    int fAckley(float *x, int n, float *fx) {
-        Vector<float> xv;
-        xv.borrowFrom(x, n);
-        return Ackley(xv, fx);
+    float fAckley(const float *restrict x, unsigned int n) {
+        return Ackley(x, n);
     }
 
-    int dAckley(double *x, int n, double *fx) {
-        Vector<double> xv;
-        xv.borrowFrom(x, n);
-        return Ackley(xv, fx);
+    double dAckley(const double *restrict x, unsigned int n) {
+        return Ackley(x, n);
     }
 
-    int ldAckley(long double *x, int n, long double *fx) {
-        Vector<long double> xv;
-        xv.borrowFrom(x, n);
-        return Ackley(xv, fx);
+    long double ldAckley(const long double *restrict x, unsigned int n) {
+        return Ackley(x, n);
     }
 }
 

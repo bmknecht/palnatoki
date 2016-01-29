@@ -7,56 +7,18 @@
 extern "C" {
 #endif
 
+
 //
 //  Neighbour function type definitions
 //
-typedef int (*pntfSANeighbour)(float *restrict x, int dim, float t,
-                               float *restrict x1);
-typedef int (*pntdSANeighbour)(double *restrict x, int dim, double t,
-                               double *restrict x1);
-typedef int (*pntldSANeighbour)(long double *restrict x, int dim,
-                                long double t, long double *restrict x1);
+typedef void (*pntfSANeighbour)(const float *restrict x, unsigned int dim,
+                                float t, float *restrict x1);
 
 
 //
 //  Objective function type definitions
 //
-typedef int (*pntfSAObjective)(float *restrict x, int n, float *restrict fx);
-typedef int (*pntdSAObjective)(double *restrict x, int n,
-                               double *restrict fx);
-typedef int (*pntldSAObjective)(long double *restrict x, int n,
-                                long double *restrict fx);
-
-
-
-//
-// Optional structure type definitions
-//
-typedef struct _pntfSAOptional
-{
-	int (*temperature)(int i, int nmax, float *t);
-	int (*downgrade)(float fx, float fxn, float temperature, int *result);
-} pntfSAOptional;
-extern const pntfSAOptional pntfSAOptionalDefault;
-
-
-typedef struct _pntdSAOptional
-{
-	int (*temperature)(int i, int nmax, double *t);
-	int (*downgrade)(double fx, double fxn, double temperature,
-                     int *result);
-} pntdSAOptional;
-extern const pntdSAOptional pntdSAOptionalDefault;
-
-
-typedef struct _pntldSAOptional
-{
-	int (*temperature)(int i, int nmax, long double *t);
-	int (*downgrade)(long double fx, long double fxn,
-                     long double temperature, int *result);
-} pntldSAOptional;
-extern const pntldSAOptional pntldSAOptionalDefault;
-
+typedef float (*pntfSAObjective)(const float *restrict x, unsigned int n);
 
 
 //
@@ -64,29 +26,10 @@ extern const pntldSAOptional pntldSAOptionalDefault;
 //
 typedef struct _pntfSAResult
 {
-	int iterations;
-	float *x;
-    int dim;
+	unsigned int iterations;
+	float *restrict x;
 	float fx;
 } pntfSAResult;
-
-
-typedef struct _pntdSAResult
-{
-	int iterations;
-	double *x;
-    int dim;
-	double fx;
-} pntdSAResult;
-
-
-typedef struct _pntldSAResult
-{
-	int iterations;
-	long double *x;
-    int dim;
-	long double fx;
-} pntldSAResult;
 
 
 /** Computes the minimum of an objective function via the simulated
@@ -110,34 +53,15 @@ typedef struct _pntldSAResult
  *  Returns:
  *  	tuple consisting of 3 values: 
  */
-PNT_LIB int pntfSimAnn(float *x,
-                       int dim,
+PNT_LIB int pntfSimAnn(float *restrict x,
+                       unsigned int dim,
                        float fx,
                        pntfSAObjective f,
-                       const int nmax,
+                       unsigned int nmax,
                        float fmin,
                        pntfSANeighbour neighbour,
-                       const pntfSAOptional *optional,
+                       void *restrict additionalData,
                        pntfSAResult *result);
-
-PNT_LIB int pntdSimAnn(double *x,
-                       int dim,
-                       double fx,
-                       pntdSAObjective f,
-                       const int nmax, double fmin,
-                       pntdSANeighbour neighbour,
-                       const pntdSAOptional *optional,
-                       pntdSAResult *result);
-
-PNT_LIB int pntldSimAnn(long double *x,
-                         int dim,
-                         long double fx,
-                         pntldSAObjective f,
-                         const int nmax,
-                         long double fmin,
-                         pntldSANeighbour neighbour,
-                         const pntldSAOptional *optional,
-                         pntldSAResult *result);
 
 
 #ifdef __cplusplus
