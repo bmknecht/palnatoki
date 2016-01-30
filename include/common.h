@@ -1,9 +1,18 @@
 #ifndef PALNATOKI_COMMON_H
 #define PALNATOKI_COMMON_H
 
+
+/** This file is part of the Palnatoki optimization library. For licensing
+ *  information refer to the LICENSE file that is included in the project.
+ *
+ *  This file in particular defines some necessary values for the Palnatoki
+ *  API, also the return/error values of most of the functions.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 
+// C -> C++ restrict keyword
 #ifndef restrict
 #define restrict __restrict
 #endif
@@ -11,6 +20,7 @@ extern "C" {
 #endif
 
 
+// Windows DLL export defines
 #ifdef WIN32
     #ifdef PNT_EXPORT_LIBRARY
         #define PNT_LIB __declspec(dllexport)
@@ -29,13 +39,16 @@ extern "C" {
 #endif
 
 
+/** Error values returned by all functions prefixed with 'pnt'. All other
+ *  functions document their behaviour individually (usually its 0 on success,
+ *  else error).
+ */
 enum PNT_RESULT
 {
     PNT_SUCCESS = 0,
     PNT_INVALID_PARAMETER,
-    PNT_LOGIC_ERROR,
-    PNT_STD_EXCEPTION,
-    PNT_UNKNOWN_ERROR   // Please file a bug report.
+    // The following error should obviously never be returned
+    PNT_STD_EXCEPTION
 };
 
 
